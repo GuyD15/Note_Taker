@@ -2,56 +2,66 @@ const path = require('path');
 const fs = require('fs');
 const uniqid = require('uniqid');
 
+const notesFilePath = 'db/db.json';
+
+const readNotesFromFile = () => {
+  return JSON.parse(fs.readFileSync(notesFilePath, 'utf8'));
+};
+
+const writeNotesToFile = (data) => {
+  fs.writeFileSync(notesFilePath, JSON.stringify(data));
+};
+
 module.exports = (app) => {
-  // logs requests
+
+  // Enhanced request logging
   app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`[LOG - ${new Date().toISOString()}] Method: ${req.method} | URL: ${req.url}`);
     next();
   });
 
   app.get('/api/notes', (req, res) => {
     try {
-      const db = JSON.parse(fs.readFileSync('db/db.json'));
-      res.json(db);
+      const notesData = readNotesFromFile();
+      res.json(notesData);
     } catch (error) {
-      res.status(500).json({ error: 'An error occurred while reading notes.' });
+      res.status(503).json({ error: 'Failed to retrieve notes. Please try again later.' });
     }
   });
 
   app.post('/api/notes', (req, res) => {
     const { title, text } = req.body;
     if (!title || !text) {
-      return res.status(400).json({ error: 'Title and text are required fields.' });
+      return res.status(422).json({ error: 'Both title and text must be provided.' });
     }
 
     try {
-      let db = JSON.parse(fs.readFileSync('db/db.json'));
+      let notesData = readNotesFromFile();
 
-      const userNote = {
+      const newNote = {
         title,
         text,
-        // creates a unique id
         id: uniqid(),
       };
 
-      db.push(userNote);
-      fs.writeFileSync('db/db.json', JSON.stringify(db));
-      res.json(userNote);
+      notesData.push(newNote);
+      writeNotesToFile(notesData);
+      res.json(newNote);
     } catch (error) {
-      res.status(500).json({ error: 'An error occurred while saving the note.' });
+      res.status(503).json({ error: 'Failed to save the note. Kindly retry.' });
     }
   });
 
-  // deletes notes based on id
   app.delete('/api/notes/:id', (req, res) => {
     try {
-      const db = JSON.parse(fs.readFileSync('db/db.json'));
-      const deleteNotes = db.filter((item) => item.id !== req.params.id);
+      const notesData = readNotesFromFile();
+      const updatedNotes = notesData.filter((note) => note.id !== req.params.id);
 
-      fs.writeFileSync('db/db.json', JSON.stringify(deleteNotes));
-      res.json(deleteNotes);
+      writeNotesToFile(updatedNotes);
+      res.json(updatedNotes);
     } catch (error) {
-      res.status(500).json({ error: 'An error occurred while deleting the note.' });
+      res.status(503).json({ error: 'Failed to delete the note. Please try again.' });
     }
   });
+
 };

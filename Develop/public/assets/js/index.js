@@ -1,31 +1,28 @@
-let noteTitle;
-let noteText;
-let saveNoteBtn;
-let newNoteBtn;
-let noteList;
+let titleOfNote;
+let textOfNote;
+let buttonSave;
+let buttonNew;
+let listOfNotes;
 
 if (window.location.pathname === '/notes') {
-  noteTitle = document.querySelector('.note-title');
-  noteText = document.querySelector('.note-textarea');
-  saveNoteBtn = document.querySelector('.save-note');
-  newNoteBtn = document.querySelector('.new-note');
-  noteList = document.querySelectorAll('.list-container .list-group');
+  titleOfNote = document.querySelector('.note-title');
+  textOfNote = document.querySelector('.note-textarea');
+  buttonSave = document.querySelector('.save-note');
+  buttonNew = document.querySelector('.new-note');
+  listOfNotes = document.querySelectorAll('.list-container .list-group');
 }
 
-// Show an element
-const show = (elem) => {
-  elem.style.display = 'inline';
+const displayElement = (element) => {
+  element.style.display = 'inline';
 };
 
-// Hide an element
-const hide = (elem) => {
-  elem.style.display = 'none';
+const hideElement = (element) => {
+  element.style.display = 'none';
 };
 
-// activeNote is used to keep track of the note in the textarea
-let activeNote = {};
+let currentNote = {};
 
-const getNotes = () =>
+const fetchNotes = () =>
   fetch('/api/notes', {
     method: 'GET',
     headers: {
@@ -33,7 +30,7 @@ const getNotes = () =>
     },
   });
 
-const saveNote = (note) =>
+const storeNote = (note) =>
   fetch('/api/notes', {
     method: 'POST',
     headers: {
@@ -42,7 +39,7 @@ const saveNote = (note) =>
     body: JSON.stringify(note),
   });
 
-const deleteNote = (id) =>
+const removeNote = (id) =>
   fetch(`/api/notes/${id}`, {
     method: 'DELETE',
     headers: {
@@ -50,134 +47,126 @@ const deleteNote = (id) =>
     },
   });
 
-const renderActiveNote = () => {
-  hide(saveNoteBtn);
+const displayCurrentNote = () => {
+  hideElement(buttonSave);
 
-  if (activeNote.id) {
-    noteTitle.setAttribute('readonly', true);
-    noteText.setAttribute('readonly', true);
-    noteTitle.value = activeNote.title;
-    noteText.value = activeNote.text;
+  if (currentNote.id) {
+    titleOfNote.setAttribute('readonly', true);
+    textOfNote.setAttribute('readonly', true);
+    titleOfNote.value = currentNote.title;
+    textOfNote.value = currentNote.text;
   } else {
-    noteTitle.removeAttribute('readonly');
-    noteText.removeAttribute('readonly');
-    noteTitle.value = '';
-    noteText.value = '';
+    titleOfNote.removeAttribute('readonly');
+    textOfNote.removeAttribute('readonly');
+    titleOfNote.value = '';
+    textOfNote.value = '';
   }
 };
 
-const handleNoteSave = () => {
-  const newNote = {
-    title: noteTitle.value,
-    text: noteText.value,
+const onNoteSave = () => {
+  const newEntry = {
+    title: titleOfNote.value,
+    text: textOfNote.value,
   };
-  saveNote(newNote).then(() => {
-    getAndRenderNotes();
-    renderActiveNote();
+  storeNote(newEntry).then(() => {
+    retrieveAndDisplayNotes();
+    displayCurrentNote();
   });
 };
 
-// Delete the clicked note
-const handleNoteDelete = (e) => {
-  // Prevents the click listener for the list from being called when the button inside of it is clicked
-  e.stopPropagation();
+const onNoteDelete = (event) => {
+  event.stopPropagation();
+  const selectedNote = event.target;
+  const selectedNoteId = JSON.parse(selectedNote.parentElement.getAttribute('data-note')).id;
 
-  const note = e.target;
-  const noteId = JSON.parse(note.parentElement.getAttribute('data-note')).id;
-
-  if (activeNote.id === noteId) {
-    activeNote = {};
+  if (currentNote.id === selectedNoteId) {
+    currentNote = {};
   }
 
-  deleteNote(noteId).then(() => {
-    getAndRenderNotes();
-    renderActiveNote();
+  removeNote(selectedNoteId).then(() => {
+    retrieveAndDisplayNotes();
+    displayCurrentNote();
   });
 };
 
-// Sets the activeNote and displays it
-const handleNoteView = (e) => {
-  e.preventDefault();
-  activeNote = JSON.parse(e.target.parentElement.getAttribute('data-note'));
-  renderActiveNote();
+const onViewNote = (event) => {
+  event.preventDefault();
+  currentNote = JSON.parse(event.target.parentElement.getAttribute('data-note'));
+  displayCurrentNote();
 };
 
-// Sets the activeNote to and empty object and allows the user to enter a new note
-const handleNewNoteView = (e) => {
-  activeNote = {};
-  renderActiveNote();
+const onNewNote = () => {
+  currentNote = {};
+  displayCurrentNote();
 };
 
-const handleRenderSaveBtn = () => {
-  if (!noteTitle.value.trim() || !noteText.value.trim()) {
-    hide(saveNoteBtn);
+const displaySaveButton = () => {
+  if (!titleOfNote.value.trim() || !textOfNote.value.trim()) {
+    hideElement(buttonSave);
   } else {
-    show(saveNoteBtn);
+    displayElement(buttonSave);
   }
 };
 
-// Render the list of note titles
-const renderNoteList = async (notes) => {
-  let jsonNotes = await notes.json();
+const displayNoteTitles = async (notes) => {
+  let parsedNotes = await notes.json();
   if (window.location.pathname === '/notes') {
-    noteList.forEach((el) => (el.innerHTML = ''));
+    listOfNotes.forEach((el) => (el.innerHTML = ''));
   }
 
-  let noteListItems = [];
+  let itemsOfList = [];
 
-  // Returns HTML element with or without a delete button
-  const createLi = (text, delBtn = true) => {
-    const liEl = document.createElement('li');
-    liEl.classList.add('list-group-item');
+  const generateLi = (text, delBtn = true) => {
+    const liElement = document.createElement('li');
+    liElement.classList.add('list-group-item');
 
-    const spanEl = document.createElement('span');
-    spanEl.classList.add('list-item-title');
-    spanEl.innerText = text;
-    spanEl.addEventListener('click', handleNoteView);
+    const spanElement = document.createElement('span');
+    spanElement.classList.add('list-item-title');
+    spanElement.innerText = text;
+    spanElement.addEventListener('click', onViewNote);
 
-    liEl.append(spanEl);
+    liElement.append(spanElement);
 
     if (delBtn) {
-      const delBtnEl = document.createElement('i');
-      delBtnEl.classList.add(
+      const deleteButton = document.createElement('i');
+      deleteButton.classList.add(
         'fas',
         'fa-trash-alt',
         'float-right',
         'text-danger',
         'delete-note'
       );
-      delBtnEl.addEventListener('click', handleNoteDelete);
+      deleteButton.addEventListener('click', onNoteDelete);
 
-      liEl.append(delBtnEl);
+      liElement.append(deleteButton);
     }
 
-    return liEl;
+    return liElement;
   };
 
-  if (jsonNotes.length === 0) {
-    noteListItems.push(createLi('No saved Notes', false));
+  if (parsedNotes.length === 0) {
+    itemsOfList.push(generateLi('No saved Notes', false));
   }
 
-  jsonNotes.forEach((note) => {
-    const li = createLi(note.title);
+  parsedNotes.forEach((note) => {
+    const li = generateLi(note.title);
     li.dataset.note = JSON.stringify(note);
 
-    noteListItems.push(li);
+    itemsOfList.push(li);
   });
 
   if (window.location.pathname === '/notes') {
-    noteListItems.forEach((note) => noteList[0].append(note));
+    itemsOfList.forEach((note) => listOfNotes[0].append(note));
   }
 };
 
-// Gets notes from the db and renders them to the sidebar
-const getAndRenderNotes = () => getNotes().then(renderNoteList);
+const retrieveAndDisplayNotes = () => fetchNotes().then(displayNoteTitles);
 
 if (window.location.pathname === '/notes') {
-  saveNoteBtn.addEventListener('click', handleNoteSave);
-  newNoteBtn.addEventListener('click', handleNewNoteView);
-  noteTitle.addEventListener('keyup', handleRenderSaveBtn);
-  noteText.addEventListener('keyup', handleRenderSaveBtn);
+  buttonSave.addEventListener('click', onNoteSave);
+  buttonNew.addEventListener('click', onNewNote);
+  titleOfNote.addEventListener('keyup', displaySaveButton);
+  textOfNote.addEventListener('keyup', displaySaveButton);
 }
 
-getAndRenderNotes();
+retrieveAndDisplayNotes();

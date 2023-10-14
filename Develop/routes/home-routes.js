@@ -1,12 +1,27 @@
 const path = require('path');
 
+// Define the paths for the HTML files
+const notesHtmlPath = path.join(__dirname, '../public/notes.html');
+const indexHtmlPath = path.join(__dirname, '../public/index.html');
+
 module.exports = (app) => {
-//  return the notes.html file.
+
+  // Endpoint to serve the notes.html file
   app.get('/notes', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/notes.html'));
+    res.sendFile(notesHtmlPath, (err) => {
+      if (err) {
+        res.status(500).send('Server failed to retrieve the notes page :(');
+      }
+    });
   });
-  // return the index.html file.
+
+  // Fallback endpoint to serve the index.html file
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  })
+    res.sendFile(indexHtmlPath, (err) => {
+      if (err) {
+        res.status(500).send('Server failed to retrieve the main page :(');
+      }
+    });
+  });
+
 };
