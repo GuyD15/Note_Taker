@@ -69,7 +69,7 @@ const onNoteSave = () => {
     text: textOfNote.value,
   };
   storeNote(newEntry).then(() => {
-    retrieveAndDisplayNotes();
+    getAndShowNotes();
     displayCurrentNote();
   });
 };
@@ -84,7 +84,7 @@ const onNoteDelete = (event) => {
   }
 
   removeNote(selectedNoteId).then(() => {
-    retrieveAndDisplayNotes();
+    getAndShowNotes();
     displayCurrentNote();
   });
 };
@@ -160,7 +160,7 @@ const displayNoteTitles = async (notes) => {
   }
 };
 
-const retrieveAndDisplayNotes = () => fetchNotes().then(displayNoteTitles);
+const getAndShowNotes = () => fetchNotes().then(displayNoteTitles);
 
 if (window.location.pathname === '/notes') {
   buttonSave.addEventListener('click', onNoteSave);
@@ -169,4 +169,4 @@ if (window.location.pathname === '/notes') {
   textOfNote.addEventListener('keyup', displaySaveButton);
 }
 
-retrieveAndDisplayNotes();
+getAndShowNotes();
