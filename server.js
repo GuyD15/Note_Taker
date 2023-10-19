@@ -7,9 +7,9 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-require('./routes/apiRoutes')(app);
-require('./routes/htmlRoutes')(app);
+require('./routes/api-routes')(app);
+require('./routes/home-routes')(app);
 
 app.listen(PORT, () => {
-  console.log(`Server available at localhost${PORT}`);
+  console.log(`Server available at http://localhost:${PORT}`);
 });
